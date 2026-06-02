@@ -1,9 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch } from 'react-redux';
 
 import { colors } from '@/constants/colors';
+import { SCREENS } from '@/navigation/screens';
+import { addItem } from '@/store/cartSlice';
 
+const MAIN_TABS_ROUTE = 'MainTabs';
 const sizes = ['S', 'M', 'L'];
 const tabs = [
   { label: 'Home', icon: 'home-outline' },
@@ -14,8 +19,19 @@ const tabs = [
 
 export default function ProductDetailsScreen({ route, navigation }) {
   const [selectedSize, setSelectedSize] = useState('S');
+  const [addedMessage, setAddedMessage] = useState('');
+  const dispatch = useDispatch();
   // route.params carries the product data sent from Home when a card is pressed.
   const product = route?.params;
+
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setAddedMessage('');
+      },
+      []
+    )
+  );
 
   if (!product) {
     return (
@@ -49,7 +65,10 @@ export default function ProductDetailsScreen({ route, navigation }) {
                 <TouchableOpacity
                   key={size}
                   style={[styles.sizeOption, isSelected && styles.selectedSizeOption]}
-                  onPress={() => setSelectedSize(size)}
+                  onPress={() => {
+                    setSelectedSize(size);
+                    setAddedMessage('');
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.sizeText, isSelected && styles.selectedSizeText]}>{size}</Text>
@@ -58,13 +77,30 @@ export default function ProductDetailsScreen({ route, navigation }) {
             })}
           </View>
 
-          <TouchableOpacity style={styles.addButton} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => {
+              dispatch(
+                addItem({
+                  id: product.id,
+                  title: product.title,
+                  price: product.price,
+                  imageUrl: product.imageUrl,
+                  size: selectedSize,
+                })
+              );
+              setAddedMessage(`${product.title} added to cart`);
+            }}
+            activeOpacity={0.85}
+          >
             <Text style={styles.addButtonText}>+ Add to Cart</Text>
           </TouchableOpacity>
+
+          {addedMessage ? <Text style={styles.addedMessage}>{addedMessage}</Text> : null}
         </View>
       </ScrollView>
 
-      <StaticBottomTabs />
+      <StaticBottomTabs navigation={navigation} onTabPress={() => setAddedMessage('')} />
     </View>
   );
 }
@@ -77,7 +113,14 @@ function BackButton({ onPress }) {
   );
 }
 
-function StaticBottomTabs() {
+function StaticBottomTabs({ navigation, onTabPress }) {
+  const handleTabPress = (screenName) => {
+    onTabPress();
+    navigation.navigate(MAIN_TABS_ROUTE, {
+      screen: screenName,
+    });
+  };
+
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => {
@@ -85,10 +128,15 @@ function StaticBottomTabs() {
         const tabColor = isActive ? colors.primary : colors.inactiveTab;
 
         return (
-          <View key={tab.label} style={styles.tabItem}>
+          <TouchableOpacity
+            key={tab.label}
+            style={styles.tabItem}
+            onPress={() => handleTabPress(SCREENS[tab.label.toUpperCase()])}
+            activeOpacity={0.8}
+          >
             <Ionicons name={tab.icon} size={24} color={tabColor} />
             <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>{tab.label}</Text>
-          </View>
+          </TouchableOpacity>
         );
       })}
     </View>
@@ -174,13 +222,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 16,
     backgroundColor: colors.primary,
-    marginTop: 28,
+    marginTop: 25,
     minHeight: 56,
   },
   addButtonText: {
     color: colors.background,
     fontSize: 17,
     fontWeight: '700',
+  },
+  addedMessage: {
+    marginTop: 12,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   notFound: {
     marginBottom: 20,

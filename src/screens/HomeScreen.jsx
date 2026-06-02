@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useDispatch } from 'react-redux';
 
 import CategoryChip from '@/components/CategoryChip';
 import ProductCard from '@/components/ProductCard';
@@ -7,16 +9,27 @@ import SearchBar from '@/components/SearchBar';
 import { colors } from '@/constants/colors';
 import { SCREENS } from '@/navigation/screens';
 import { fetchCoffeeMenu } from '@/services/coffeeApi';
+import { addItem } from '@/store/cartSlice';
 
 const categories = ['All', 'Latte', 'Cappuccino', 'Espresso'];
 
 export default function HomeScreen({ navigation }) {
+  const dispatch = useDispatch();
   const [searchValue, setSearchValue] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [coffees, setCoffees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setSelectedProduct('');
+      },
+      []
+    )
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -57,6 +70,16 @@ export default function HomeScreen({ navigation }) {
     return matchesCategory && matchesSearch;
   });
 
+  const handleSearchChange = (value) => {
+    setSearchValue(value);
+    setSelectedProduct('');
+  };
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    setSelectedProduct('');
+  };
+
   function renderCoffeeItem({ item }) {
     return (
       <ProductCard
@@ -72,7 +95,19 @@ export default function HomeScreen({ navigation }) {
             description: item.description,
           })
         }
-        onAddToCart={() => setSelectedProduct(item.title)}
+        onAddToCart={() => {
+          // Home uses Redux to add products to the shared cart from any screen.
+          dispatch(
+            addItem({
+              id: item.id,
+              title: item.title,
+              price: item.price,
+              imageUrl: item.imageUrl,
+              size: 'M',
+            })
+          );
+          setSelectedProduct(item.title);
+        }}
       />
     );
   }
@@ -81,7 +116,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.appShell}>
         <View style={styles.section}>
-          <SearchBar value={searchValue} onChangeText={setSearchValue} placeholder="Search coffee..." />
+          <SearchBar value={searchValue} onChangeText={handleSearchChange} placeholder="Search coffee..." />
         </View>
 
         <View style={styles.categoryWrapper}>
@@ -96,7 +131,7 @@ export default function HomeScreen({ navigation }) {
                 key={category}
                 title={category}
                 active={activeCategory === category}
-                onPress={() => setActiveCategory(category)}
+                onPress={() => handleCategoryChange(category)}
               />
             ))}
           </ScrollView>

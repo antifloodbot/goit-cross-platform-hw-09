@@ -67,3 +67,46 @@ npm run web
 
 ### Drawer Navigation
 ![Drawer Navigation](assets/drawer.png)
+
+### Context API - Light Theme
+![Light Theme](assets/light-theme.png)
+
+The application uses ThemeContext and useContext to manage and switch between light and dark themes.
+
+### Context API - Dark Theme
+![Dark Theme](assets/dark-theme.png)
+
+The application uses ThemeContext and useContext to manage and switch between light and dark themes.
+
+### Redux Cart
+![Redux Cart](assets/cart.png)
+
+The application uses Redux Toolkit for cart state management. Products can be added, removed, and their quantity can be updated.
+
+## State Management
+
+### Context API
+
+Implemented ThemeContext using React Context API.
+
+Features:
+- ThemeProvider wraps the application.
+- Theme state is shared through useContext.
+- Toggle Theme button is available on the Settings screen.
+- Light and Dark themes are supported.
+- Theme state is consumed by multiple components.
+
+### Redux
+
+Implemented Redux Toolkit for cart management.
+
+Features:
+- configureStore setup in store.js
+- cartSlice created with reducers:
+  - addItem
+  - removeItem
+  - updateQuantity
+- useSelector is used to read cart data.
+- useDispatch is used to update cart state.
+- Products can be added from Home and Product Details screens.
+- Cart screen supports quantity updates and item removal.
